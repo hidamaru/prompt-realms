@@ -1,4 +1,5 @@
 import hashlib
+import json
 import os
 import smtplib
 from email.mime.multipart import MIMEMultipart
@@ -60,3 +61,18 @@ def send_email(subject, body, recipient):
         print('Error:', e)
     finally:
         server.quit()
+
+def read_savefile_and_pop_events(save_file):
+    with open(save_file, 'r') as f:
+        json_data = json.load(f)
+
+    if 'events' in json_data.keys():
+        events = json_data['events']
+    else:
+        events = ""
+    json_data['events'] = ""
+
+    with open(save_file, 'w') as f:
+        json.dump(json_data, f)
+
+    return json_data, events

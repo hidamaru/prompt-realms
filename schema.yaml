@@ -101,6 +101,8 @@ paths:
                 properties:
                   secret:
                     type: string
+                  events:
+                    type: string
         '400':
           description: Bad request
           content:
@@ -145,6 +147,8 @@ paths:
                 type: object
                 properties:
                   message:
+                    type: string
+                  events:
                     type: string
         '400':
           description: Bad request
@@ -202,6 +206,8 @@ paths:
                 properties:
                   message:
                     type: string
+                  events:
+                    type: string
         '400':
           description: Bad request
           content:
@@ -257,6 +263,8 @@ paths:
                 type: object
                 properties:
                   message:
+                    type: string
+                  events:
                     type: string
         '400':
           description: Bad request
@@ -315,6 +323,8 @@ paths:
                 type: object
                 properties:
                   message:
+                    type: string
+                  events:
                     type: string
         '400':
           description: Bad request
@@ -378,6 +388,8 @@ paths:
                     type: string
                   message_for_gm:
                     type: string
+                  events:
+                    type: string
         '400':
           description: Bad request
           content:
@@ -398,6 +410,68 @@ paths:
                     type: string
         '404':
           description: User file for found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+  /attack:
+    post:
+      summary: Attempts to attack another player to take coins from them. Attacks using either vigor, agility or intelligence, defined in stat. Target is the username of whoever the user attempts to attack.
+      operationId: attack
+      security:
+        - APIKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                secret:
+                  type: string
+                stat:
+                  type: string
+                target:
+                  type: string
+      responses:
+        '200':
+          description: Coins transferred successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  attacker_dice_roll:
+                    type: int
+                  target_dice_roll:
+                    type: int
+                  message:
+                    type: string
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        '404':
+          description: User or target file for found
           content:
             application/json:
               schema:
