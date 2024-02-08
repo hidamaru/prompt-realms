@@ -78,15 +78,15 @@ def authenticate():
         username = "Anonymous#" + random_chars
         with open(save_file, 'w') as json_file:
             json.dump({
-                "coins": 0,
-                "vigor": 0,
-                "agility": 0,
-                "intelligence": 0,
+                "coins": 10,
+                "vigor": 1,
+                "agility": 1,
+                "intelligence": 1,
                 "items": "",
                 "username": username,
             }, json_file)
         authenticated_users[email] = secret
-        return jsonify({'message': f'New user created for {email} with username {username}. User starts with 0 vigor, 0 agility, 0 intelligence. User starts with 0 coins.', 'secret': secret})
+        return jsonify({'message': f'New user created for {email} with username {username}. User starts with 1 vigor, 1 agility, 1 intelligence. User starts with 10 coins.', 'secret': secret})
     else:
         json_data, events = read_savefile_and_pop_events(save_file)
 
@@ -226,10 +226,10 @@ def chance():
     print("result: " + str(result), file=sys.stderr)
 
     result_text_key = result
-    if result_text_key > 7:
-        result_text_key = 7
-    if result_text_key < 0:
-        result_text_key = 0
+    if result_text_key > 8:
+        result_text_key = 8
+    if result_text_key < 1:
+        result_text_key = 1
     result_text = result_dict[result_text_key]
 
     stat_modifier_text = string_format_modifier(stat_modifier)
@@ -242,7 +242,7 @@ def chance():
 
     extra_text = "Weave the following into the story: "
 
-    if result <= 0:
+    if result <= 1:
         coins_lost = int(coin_potential*(dice_roll/2))
         if coins_lost > json_data['coins']:
             coins_lost = json_data['coins']
@@ -252,37 +252,37 @@ def chance():
             json_data[stat] = json_data[stat] - 1
             extra_text = extra_text + f", {stat} was reduced by 1"
 
-    elif result == 1:
+    elif result == 2:
         coins_lost = int(coin_potential*(dice_roll/3))
         if coins_lost > json_data['coins']:
             coins_lost = json_data['coins']
         json_data['coins'] = json_data['coins'] - coins_lost
         extra_text = extra_text + f"Lost {coins_lost} coins"
 
-    elif result == 2:
+    elif result == 3:
         extra_text = extra_text + f"Gained no coins"
 
-    elif result == 3:
+    elif result == 4:
         coins_gained = int(coin_potential * (dice_roll / 6))
         json_data['coins'] = json_data['coins'] + coins_gained
         extra_text = extra_text + f"Gained {coins_gained} coins"
 
-    elif result == 4:
+    elif result == 5:
         json_data['coins'] = json_data['coins'] + coin_potential
         extra_text = extra_text + f"Gained {coin_potential} coins"
 
-    elif result == 5:
+    elif result == 6:
         json_data['coins'] = json_data['coins'] + coin_potential + int(coin_potential * (dice_roll/6))
         extra_text = extra_text + f"Gained {coin_potential} coins"
 
-    elif result == 6:
+    elif result == 7:
         json_data['coins'] = json_data['coins'] + coin_potential + int(coin_potential * (dice_roll/3))
         extra_text = extra_text + f"Gained {coin_potential} coins"
         if dice_roll >= 4:
             json_data[stat] = json_data[stat] + 1
             extra_text = extra_text + f", {stat} increased by 1"
 
-    elif result >= 7:
+    elif result >= 8:
         json_data['coins'] = json_data['coins'] + coin_potential + int(coin_potential * dice_roll)
         extra_text = extra_text + f"Gained {coin_potential} coins"
         if dice_roll >= 4:
