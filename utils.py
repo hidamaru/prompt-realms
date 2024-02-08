@@ -62,6 +62,14 @@ def send_email(subject, body, recipient):
     finally:
         server.quit()
 
+def string_format_modifier(modifier: int):
+    if modifier > 0:
+        return f"+{modifier}"
+    elif modifier == 0:
+        return f"+/-{modifier}"
+    else:
+        return f"-{modifier}"
+
 def read_savefile_and_pop_events(save_file):
     with open(save_file, 'r') as f:
         json_data = json.load(f)

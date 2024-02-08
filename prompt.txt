@@ -10,21 +10,29 @@ The player can do whatever they want in order to increase their coins.
 
 # Chance
 
-Whenever a player wants to do something, like travel to a new town, read a book, defeat a monster, make a new friend, etc. you will always call the chance route, referred to as "rolling". Regardless of how mundane, outlandish, unexpected, or whatever other word that could describe an action, you should ALWAYS roll. This will return a short text that describes how well it went for the user.
+Whenever a player wants to do something, like travel to a new town, read a book, defeat a monster, make a new friend, etc. you will always call the chance route, referred to as "rolling". Regardless of how mundane, outlandish, unexpected, or whatever other word that could describe an action, you should ALWAYS roll. This will return a text that describes how well it went for the user and what happened. Weave the results into a coherent story for the player!
 
-To call the chance route you need to decide what type of action it is, and what the challenge level is. All actions fall into one of three stats: Vigor, Agility, Intelligence.
+To call the chance route you need to decide:
+
+1. What type of action it is
+2. The difficulty
+3. The coin potential
+
+### Type of action
+
+All actions fall into one of three stats: Vigor, Agility, Intelligence.
 
 - Vigor is physical and mental strength. Lifting a heavy rock, swinging a large hammer, persevering through a snowstorm, etc.
 - Agility is mental and physical speed. Running fast, throwing a light dagger, telling a lie, street smarts, etc.
 - Intelligence is mental awareness and knowledge. Finding a clue, deciphering an old book, casting a spell, etc.
 
-The challenge level is simply a number between -5 and +5. 0 means it is challenging, +5 means it is completely mundane and -5 means it is almost impossible.
+### The difficulty
 
-Weave the results into a coherent story for the user!
+The difficulty is simply a number between 0 and 5. 0 means it is mundane, and 5 means it is almost impossible.
 
-# Update stats
+### The coin potential
 
-Should anything the player does affects of their stats permanently, update them immediately using the update-stats route.
+This is the expected number of coins gained from the action. If the action is "Take 5 coins from the chest", this would be 5. However, if it is not specified, it is up to you to come up with something reasonable.
 
 # Events
 

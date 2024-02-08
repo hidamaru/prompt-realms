@@ -235,127 +235,9 @@ paths:
                 properties:
                   error:
                     type: string
-  /update-coins:
-    post:
-      summary: Update user's coins, requires a secret to use
-      operationId: updateCoins
-      security:
-        - APIKeyAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                email:
-                  type: string
-                secret:
-                  type: string
-                coin_change:
-                  type: integer
-      responses:
-        '200':
-          description: Coins updated successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                  events:
-                    type: string
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-        '404':
-          description: User file for found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-  /update-stat:
-    post:
-      summary: Update a stat for a user. Can both increase and decrease stats. Stat must be vigor, agility or intelligence.
-      operationId: updateStat
-      security:
-        - APIKeyAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                email:
-                  type: string
-                secret:
-                  type: string
-                stat:
-                  type: string
-                stat_change:
-                  type: integer
-      responses:
-        '200':
-          description: Stat updated successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                  events:
-                    type: string
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-        '404':
-          description: User file for found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
   /chance:
     post:
-      summary: Randomize a result of an action with specific stat and challenge level for the user. Stat must be vigor, agility or intelligence. Positive numbers indicate easier actions, negative numbers indicate more difficult actions.
+      summary: Randomize a result of an action with specific stat, difficulty and coin_potential. stat must be vigor, agility or intelligence. difficult must be 0 to 5, where 0 is mundane and 5 is almost impossible. coin_potential is the positive number of coins expected to be gained from the activity.
       operationId: chance
       security:
         - APIKeyAuth: []
@@ -372,7 +254,9 @@ paths:
                   type: string
                 stat:
                   type: string
-                challenge_level:
+                difficulty:
+                  type: int
+                coin_potential:
                   type: int
       responses:
         '200':
