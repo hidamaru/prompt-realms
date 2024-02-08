@@ -248,7 +248,7 @@ def chance():
             coins_lost = json_data['coins']
         json_data['coins'] = json_data['coins'] - coins_lost
         extra_text = extra_text + f"Lost {coins_lost} coins"
-        if difficulty > dice_roll:
+        if dice_roll <= 3:
             json_data[stat] = json_data[stat] - 1
             extra_text = extra_text + f", {stat} was reduced by 1"
 
@@ -278,14 +278,14 @@ def chance():
     elif result == 6:
         json_data['coins'] = json_data['coins'] + coin_potential + int(coin_potential * (dice_roll/3))
         extra_text = extra_text + f"Gained {coin_potential} coins"
-        if dice_roll > difficulty:
+        if dice_roll >= 4:
             json_data[stat] = json_data[stat] + 1
             extra_text = extra_text + f", {stat} increased by 1"
 
     elif result >= 7:
         json_data['coins'] = json_data['coins'] + coin_potential + int(coin_potential * dice_roll)
         extra_text = extra_text + f"Gained {coin_potential} coins"
-        if dice_roll > difficulty:
+        if dice_roll >= 4:
             json_data['vigor'] = json_data['vigor'] + 1
             json_data['agility'] = json_data['agility'] + 1
             json_data['intelligence'] = json_data['intelligence'] + 1
