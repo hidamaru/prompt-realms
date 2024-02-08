@@ -301,6 +301,69 @@ paths:
                 properties:
                   error:
                     type: string
+  /purchase:
+    post:
+      summary: Pay coins to increase a stat by 1. This can be training, buying an item, or something else where paying coins to become stronger is reasonable. stat must be vigor, agility or intelligence.
+      operationId: purchase
+      security:
+        - APIKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                secret:
+                  type: string
+                stat:
+                  type: string
+                cost:
+                  type: int
+        '200':
+          description: Transaction completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dice_roll:
+                    type: string
+                  message_for_user:
+                    type: string
+                  message_for_gm:
+                    type: string
+                  events:
+                    type: string
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        '404':
+          description: User file for found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
   /attack:
     post:
       summary: Attempts to attack another player to take coins from them. Attacks using either vigor, agility or intelligence, defined in stat. Target is the username of whoever the user attempts to attack.

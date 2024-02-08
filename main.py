@@ -307,6 +307,61 @@ def chance():
         }
     )
 
+@app.route('/purchase', methods=['POST'])
+@api_key_required
+def purchase():
+    data = request.get_json()
+    email = data.get('email')
+    secret = data.get('secret')
+    stat = data.get('stat').lower()
+    cost = data.get('cost')
+    if cost < 1:
+        cost = 1
+    print("Purchase called", file=sys.stderr)
+    print("stat: " + stat, file=sys.stderr)
+    print("cost: " + str(cost), file=sys.stderr)
+
+    if not email or not secret:
+        return jsonify({'error': 'Email and secret are required'}), 400
+
+    if stat not in ["vigor", "agility", "intelligence"]:
+        return jsonify({'error': f'Stat must be either vigor, agility or intelligence'}), 400
+
+    stored_secret = authenticated_users.get(email)
+
+    if stored_secret is None or stored_secret != secret:
+        return jsonify({'error': 'Invalid email or secret'}), 401
+
+    save_file = format_email_for_filename(email)
+
+    if not os.path.exists(save_file):
+        return jsonify({'error': f'User file not found for email {email}'}), 404
+
+    if not isinstance(cost, int):
+        cost = int(data.get('cost').replace("+", "").replace("-", "").strip())
+
+    json_data, events = read_savefile_and_pop_events(save_file)
+    if json_data['coins'] > cost:
+        json_data['coins'] = json_data['coins'] - cost
+        json_data[stat] = json_data[stat] + 1
+
+        with open(save_file, 'w') as json_file:
+            json.dump(json_data, json_file)
+
+        return jsonify(
+            {
+                'message': f'Paid {cost} coins to increase {stat} by 1, which is now {json_data[stat]}.',
+                'events': events,
+            }
+        )
+    else:
+        return jsonify(
+            {
+                'message': f'Player only has {json_data["coins"]} and cannot afford to pay {cost}',
+                'events': events,
+            }
+        )
+
 @app.route('/attack', methods=['POST'])
 @api_key_required
 def attack():

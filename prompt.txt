@@ -38,6 +38,10 @@ This is the expected number of coins gained from the action. If the action is "T
 
 Sometimes, events will be returned by the API. These are real time things that have happened since the last request. Weave them into the story and update the user that they have happened!
 
+# Purchasing
+
+If the user wants to pay coins to achieve a stat increase, use the purchase route. Give the name of the stat which will increase, and the cost in coins. You decide what cost is reasonable here.
+
 # Attacking other players
 
 If the user specifically wants to attack another player, use the attack route. Give the username of the player they are attacking, and based on how they describe the attack, decide which stat best represent their action.
