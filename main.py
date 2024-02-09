@@ -11,12 +11,10 @@ from results import result_dict
 
 from flask import Flask, request, jsonify
 
-from utils import send_email, format_email_for_filename, read_savefile_and_pop_events, string_format_modifier
+from utils import send_email, format_email_for_filename, read_savefile_and_pop_events, string_format_modifier, \
+    update_savefile
 
 app = Flask(__name__)
-
-users = {}
-authenticated_users = {}
 
 def api_key_required(func):
     @functools.wraps(func)
@@ -41,7 +39,29 @@ def request_token():
         return jsonify({'error': 'Email address is required'}), 400
 
     token = str(secrets.randbelow(1000000)).zfill(6)
-    users[email] = token
+
+    save_file = format_email_for_filename(email)
+
+    if not os.path.exists(save_file):
+        random_chars = ''.join(random.choices(string.ascii_letters + string.digits, k=5))
+        username = "Anonymous#" + random_chars
+
+        characters = string.ascii_letters + string.digits
+        length = 32
+        secret = ''.join(secrets.choice(characters) for _ in range(length))
+        with open(save_file, 'w') as json_file:
+            json.dump({
+                "coins": 10,
+                "vigor": 1,
+                "agility": 1,
+                "intelligence": 1,
+                "items": "",
+                "username": username,
+                "token": "",
+                "secret": secret,
+            }, json_file)
+
+    update_savefile(save_file, "token", token)
 
     send_email(
         subject="Login Token",
@@ -62,41 +82,35 @@ def authenticate():
     if not email or not token:
         return jsonify({'error': 'Email and token are required'}), 400
 
-    stored_token = users.get(email)
+    save_file = format_email_for_filename(email)
 
-    if stored_token is None or stored_token != token:
-        return jsonify({'error': 'Invalid email or token'}), 401
+    if not os.path.exists(save_file):
+        return jsonify({'error': 'User file not found, no token has been requested for this email'}), 404
+
+    json_data, events = read_savefile_and_pop_events(save_file)
+
+    stored_token = json_data['token']
+
+    if stored_token is None or stored_token  == "":
+        return jsonify({'error': 'No valid token for user, request one first'}), 401
+
+    if stored_token != token:
+        return jsonify({'error': 'Incorrect token'}), 401
 
     characters = string.ascii_letters + string.digits
     length = 32
     secret = ''.join(secrets.choice(characters) for _ in range(length))
 
-    save_file = format_email_for_filename(email)
+    update_savefile(save_file, "token", "")
+    update_savefile(save_file, "secret", secret)
 
-    if not os.path.exists(save_file):
-        random_chars = ''.join(random.choices(string.ascii_letters + string.digits, k=5))
-        username = "Anonymous#" + random_chars
-        with open(save_file, 'w') as json_file:
-            json.dump({
-                "coins": 10,
-                "vigor": 1,
-                "agility": 1,
-                "intelligence": 1,
-                "items": "",
-                "username": username,
-            }, json_file)
-        authenticated_users[email] = secret
-        return jsonify({'message': f'New user created for {email} with username {username}. User starts with 1 vigor, 1 agility, 1 intelligence. User starts with 10 coins.', 'secret': secret})
-    else:
-        json_data, events = read_savefile_and_pop_events(save_file)
-
-        authenticated_users[email] = secret
-        return jsonify(
-            {
-                'message': f'User {email} authenticated, username is {json_data["username"]}. User has {json_data["vigor"]} vigor, {json_data["agility"]} agility and {json_data["intelligence"]} intelligence. User has {str(json_data["coins"])} coins', 'secret': secret,
-                'events': events,
-            }
-        )
+    return jsonify(
+        {
+            'message': f'User {email} authenticated, username is {json_data["username"]}. User has {json_data["vigor"]} vigor, {json_data["agility"]} agility and {json_data["intelligence"]} intelligence. User has {str(json_data["coins"])} coins',
+            'secret': secret,
+            'events': events,
+        }
+    )
 
 @app.route('/info', methods=['POST'])
 @api_key_required
@@ -108,20 +122,18 @@ def info():
     if not email or not secret:
         return jsonify({'error': 'Email and secret are required'}), 400
 
-    stored_secret = authenticated_users.get(email)
-
-    if stored_secret is None:
-        return jsonify({'error': 'Invalid email'}), 401
-
-    if stored_secret != secret:
-        return jsonify({'error': 'Invalid secret, ask the user to log in again'}), 401
-
     save_file = format_email_for_filename(email)
 
     if not os.path.exists(save_file):
         return jsonify({'error': f'User file not found for email {email}'}), 404
 
     json_data, events = read_savefile_and_pop_events(save_file)
+
+    stored_secret = json_data['secret']
+
+    if stored_secret != secret:
+        return jsonify({'error': 'Invalid secret, ask the user to log in again'}), 401
+
 
     return jsonify(
         {
@@ -141,10 +153,14 @@ def update_username():
     if not email or not secret:
         return jsonify({'error': 'Email and secret are required'}), 400
 
-    stored_secret = authenticated_users.get(email)
+    save_file = format_email_for_filename(email)
 
-    if stored_secret is None:
-        return jsonify({'error': 'Invalid email'}), 401
+    if not os.path.exists(save_file):
+        return jsonify({'error': f'User file not found for email {email}'}), 404
+
+    json_data, events = read_savefile_and_pop_events(save_file)
+
+    stored_secret = json_data['secret']
 
     if stored_secret != secret:
         return jsonify({'error': 'Invalid secret, ask the user to log in again'}), 401
@@ -164,11 +180,6 @@ def update_username():
                     existing_username = data['username']
                     if existing_username == new_username:
                         return jsonify({'message': f'The username {new_username} is already taken'}, 400)
-
-    save_file = format_email_for_filename(email)
-
-    if not os.path.exists(save_file):
-        return jsonify({'error': f'User file not found for email {email}'}), 404
 
     if not os.path.exists(save_file):
         with open(save_file, 'w') as json_file:
@@ -207,24 +218,20 @@ def chance():
     if stat not in ["vigor", "agility", "intelligence"]:
         return jsonify({'error': f'Stat must be either vigor, agility or intelligence'}), 400
 
-    stored_secret = authenticated_users.get(email)
-
-    if stored_secret is None:
-        return jsonify({'error': 'Invalid email'}), 401
-
-    if stored_secret != secret:
-        return jsonify({'error': 'Invalid secret, ask the user to log in again'}), 401
-
     save_file = format_email_for_filename(email)
 
     if not os.path.exists(save_file):
         return jsonify({'error': f'User file not found for email {email}'}), 404
 
+    json_data, events = read_savefile_and_pop_events(save_file)
+
+    stored_secret = json_data['secret']
+
+    if stored_secret != secret:
+        return jsonify({'error': 'Invalid secret, ask the user to log in again'}), 401
+
     if not isinstance(difficulty, int):
         difficulty = int(data.get('difficulty').replace("+", "").strip())
-
-
-    json_data, events = read_savefile_and_pop_events(save_file)
 
     stat_modifier = json_data[stat]
     dice_roll = random.randint(1, 6)
@@ -336,18 +343,17 @@ def purchase():
     if stat not in ["vigor", "agility", "intelligence"]:
         return jsonify({'error': f'Stat must be either vigor, agility or intelligence'}), 400
 
-    stored_secret = authenticated_users.get(email)
-
-    if stored_secret is None:
-        return jsonify({'error': 'Invalid email'}), 401
-
-    if stored_secret != secret:
-        return jsonify({'error': 'Invalid secret, ask the user to log in again'}), 401
-
     save_file = format_email_for_filename(email)
 
     if not os.path.exists(save_file):
         return jsonify({'error': f'User file not found for email {email}'}), 404
+
+    json_data, events = read_savefile_and_pop_events(save_file)
+
+    stored_secret = json_data['secret']
+
+    if stored_secret != secret:
+        return jsonify({'error': 'Invalid secret, ask the user to log in again'}), 401
 
     if not isinstance(cost, int):
         cost = int(data.get('cost').replace("+", "").replace("-", "").strip())
@@ -392,14 +398,6 @@ def attack():
     if stat not in ["vigor", "agility", "intelligence"]:
         return jsonify({'error': f'Stat must be either vigor, agility or intelligence'}), 400
 
-    stored_secret = authenticated_users.get(email)
-
-    if stored_secret is None:
-        return jsonify({'error': 'Invalid email'}), 401
-
-    if stored_secret != secret:
-        return jsonify({'error': 'Invalid secret, ask the user to log in again'}), 401
-
     attacker_filename = format_email_for_filename(email)
 
     if not os.path.exists(attacker_filename):
@@ -407,6 +405,11 @@ def attack():
 
     with open(attacker_filename, 'r') as json_file:
         attacker_json_data = json.load(json_file)
+
+    stored_secret = attacker_json_data['secret']
+
+    if stored_secret != secret:
+        return jsonify({'error': 'Invalid secret, ask the user to log in again'}), 401
 
     if attacker_json_data['username'] == target:
         return jsonify({'error': 'Cannot attack yourself'}), 400

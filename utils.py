@@ -84,3 +84,12 @@ def read_savefile_and_pop_events(save_file):
         json.dump(json_data, f)
 
     return json_data, events
+
+def update_savefile(save_file, key, value):
+    with open(save_file, 'r') as f:
+        json_data = json.load(f)
+
+    json_data[key] = value
+
+    with open(save_file, 'w') as f:
+        json.dump(json_data, f)
