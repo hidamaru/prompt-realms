@@ -110,8 +110,11 @@ def info():
 
     stored_secret = authenticated_users.get(email)
 
-    if stored_secret is None or stored_secret != secret:
-        return jsonify({'error': 'Invalid email or secret'}), 401
+    if stored_secret is None:
+        return jsonify({'error': 'Invalid email'}), 401
+
+    if stored_secret != secret:
+        return jsonify({'error': 'Invalid secret, ask the user to log in again'}), 401
 
     save_file = format_email_for_filename(email)
 
@@ -140,8 +143,11 @@ def update_username():
 
     stored_secret = authenticated_users.get(email)
 
-    if stored_secret is None or stored_secret != secret:
-        return jsonify({'error': 'Invalid email or secret'}), 401
+    if stored_secret is None:
+        return jsonify({'error': 'Invalid email'}), 401
+
+    if stored_secret != secret:
+        return jsonify({'error': 'Invalid secret, ask the user to log in again'}), 401
 
     # Check is username is taken
     for filename in os.listdir():
@@ -203,8 +209,11 @@ def chance():
 
     stored_secret = authenticated_users.get(email)
 
-    if stored_secret is None or stored_secret != secret:
-        return jsonify({'error': 'Invalid email or secret'}), 401
+    if stored_secret is None:
+        return jsonify({'error': 'Invalid email'}), 401
+
+    if stored_secret != secret:
+        return jsonify({'error': 'Invalid secret, ask the user to log in again'}), 401
 
     save_file = format_email_for_filename(email)
 
@@ -329,8 +338,11 @@ def purchase():
 
     stored_secret = authenticated_users.get(email)
 
-    if stored_secret is None or stored_secret != secret:
-        return jsonify({'error': 'Invalid email or secret'}), 401
+    if stored_secret is None:
+        return jsonify({'error': 'Invalid email'}), 401
+
+    if stored_secret != secret:
+        return jsonify({'error': 'Invalid secret, ask the user to log in again'}), 401
 
     save_file = format_email_for_filename(email)
 
@@ -382,8 +394,11 @@ def attack():
 
     stored_secret = authenticated_users.get(email)
 
-    if stored_secret is None or stored_secret != secret:
-        return jsonify({'error': 'Invalid email or secret'}), 401
+    if stored_secret is None:
+        return jsonify({'error': 'Invalid email'}), 401
+
+    if stored_secret != secret:
+        return jsonify({'error': 'Invalid secret, ask the user to log in again'}), 401
 
     attacker_filename = format_email_for_filename(email)
 
