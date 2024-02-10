@@ -150,8 +150,14 @@ def update_username():
     secret = data.get('secret')
     new_username = data.get('new_username')
 
-    if not email or not secret:
-        return jsonify({'error': 'Email and secret are required'}), 400
+    if not email:
+        return jsonify({'error': 'email is required'}), 400
+
+    if not secret:
+        return jsonify({'error': 'secret is required'}), 400
+
+    if not new_username:
+        return jsonify({'error': 'new_username is required'}), 400
 
     save_file = format_email_for_filename(email)
 
@@ -413,15 +419,21 @@ def attack():
     secret = data.get('secret')
     stat = data.get('stat').lower()
     target = data.get('target')
-    print("Attack called", file=sys.stderr)
-    print("stat: " + stat, file=sys.stderr)
-    print("user_to_attack: " + target, file=sys.stderr)
 
-    if not email or not secret:
-        return jsonify({'error': 'Email and secret are required'}), 400
+    if not email:
+        return jsonify({'error': 'email is required'}), 400
+
+    if not secret:
+        return jsonify({'error': 'secret is required'}), 400
+
+    if not stat:
+        return jsonify({'error': 'stat is required'}), 400
+
+    if not target:
+        return jsonify({'error': 'target is required'}), 400
 
     if stat not in ["vigor", "agility", "intelligence"]:
-        return jsonify({'error': f'Stat must be either vigor, agility or intelligence'}), 400
+        return jsonify({'error': f'stat must be either vigor, agility or intelligence'}), 400
 
     attacker_filename = format_email_for_filename(email)
 
@@ -441,12 +453,9 @@ def attack():
 
     target_filename = None
     for target_filename in os.listdir():
-        print('target_filename: ' + target_filename, file=sys.stderr)
         if target_filename.endswith('.json'):
             with open(target_filename, 'r') as json_file:
                 target_json_data = json.load(json_file)
-                print('target: ' + target, file=sys.stderr)
-                print('target_json_data: ' + str(target_json_data), file=sys.stderr)
 
                 if 'username' in target_json_data:
                     print('target_json_data["username"]: ' + target_json_data['username'], file=sys.stderr)
@@ -470,8 +479,23 @@ def attack():
         if coins_taken > target_coins:
             coins_taken = target_coins
         target_json_data['coins'] = target_coins - coins_taken
+
+        attack_text = ""
+        stat_to_reduce = None
+        if stat == "vigor":
+            if target_json_data['vigor'] + 3 > attacker_json_data['vigor']:
+                stat_to_reduce = random.choice(['vigor', 'agility', 'intelligence'])
+                target_json_data[stat_to_reduce] = target_json_data[stat_to_reduce] - 1
+                attack_text =  f"\nUser {attacker_json_data['username']} wounded you in combat which reduced your {target_json_data} by 1, and took"
+            else:
+                attack_text =  f"\nUser {attacker_json_data['username']} approached you, and out of fear you surrendered and gave them"
+        elif stat == "agility":
+            attack_text =  f"\nAn unseen attacker stole"
+        elif stat == "intelligence":
+            attack_text =  f"\nUser {attacker_json_data['username']} outwitted you or used spells to take"
+
         if "events" in target_json_data.keys():
-            target_json_data['events'] = target_json_data['events'] + f"\nUser {attacker_json_data['username']} attacked you and stole {coins_taken} coins."
+            target_json_data['events'] = target_json_data['events'] + f"{attack_text} {coins_taken} coins."
         else:
             target_json_data['events'] = f"User {attacker_json_data['username']} attacked you and stole {coins_taken} coins."
         attacker_json_data['coins'] = own_coins + coins_taken
@@ -481,13 +505,24 @@ def attack():
         with open(target_filename, 'w') as json_file:
             json.dump(target_json_data, json_file)
 
-        attacker_modifier_formatted = string_format_modifier(target_stat_modifier)
+        attacker_modifier_formatted = string_format_modifier(attacker_stat_modifier)
 
         message = f'Start the reply to the user with this:\n\n' \
-                  f'**Rolled f{attacker_dice_roll}, f{stat} f{attacker_modifier_formatted}**\n\n' \
-                  f'**Target result: f{target_stat_modifier - target_dice_roll}**\n\n' \
-                  f'Use this text to describe what happened:\n\n' \
-                  f'The attacker took f{coins_taken} coins from f{target} and now has f{attacker_json_data["coins"]} coins.'
+                  f'**You rolled {attacker_dice_roll}, {stat} {attacker_modifier_formatted}**\n\n' \
+                  f'**{target} rolled: {target_stat_modifier + target_dice_roll}**\n\n' \
+                  f'Use this text to describe what happened:\n\n'
+        if stat == 'vigor':
+            if stat_to_reduce:
+                message = message + f'The player defeated {target} in combat and took {coins_taken} coins from them. The player now has {attacker_json_data["coins"]} coins.' \
+                                    f'\n\nThe player wounded {target} and reduced their {stat_to_reduce} by 1'
+            else:
+                message = message + f'The player approached {target}, who quivered in fear and gave up {coins_taken} coins. The player now has {attacker_json_data["coins"]} coins.'
+        if stat == 'agility':
+            message = message + f'Without being seen, the player stole {coins_taken} coins from {target}. The player now has {attacker_json_data["coins"]} coins.'
+        if stat == 'intelligence':
+            stat_to_learn = random.choice(['vigor', 'agility', 'intelligence', 'coins'])
+            message = message + f'The player outwitted {target}, or used spells in order to take {coins_taken} coins from them. The player now has {attacker_json_data["coins"]} coins.' \
+                                f'\n\nDoing this, the player also learned that {target} has {target_json_data[stat_to_learn]} {stat_to_learn}.'
     else:
         target_coins = target_json_data["coins"]
         own_coins = attacker_json_data["coins"]
@@ -496,9 +531,9 @@ def attack():
             coins_lost = own_coins
         target_json_data['coins'] = target_coins + coins_lost
         if "events" in target_json_data.keys():
-            target_json_data['events'] = target_json_data['events'] +f"\nUser {attacker_json_data['username']} attacked you but failed, and you gained {coins_lost} coins."
+            target_json_data['events'] = target_json_data['events'] + f"\nUser {attacker_json_data['username']} tried to take coins from you but failed, you gained {coins_lost} coins."
         else:
-            target_json_data['events'] = f"User {attacker_json_data['username']} attacked you but failed, and you gained {coins_lost} coins."
+            target_json_data['events'] = f"\nUser {attacker_json_data['username']} tried to take coins from you but failed, you gained {coins_lost} coins."
         attacker_json_data['coins'] = own_coins - coins_lost
 
         with open(attacker_filename, 'w') as json_file:
@@ -509,10 +544,12 @@ def attack():
         attacker_modifier_formatted = string_format_modifier(target_stat_modifier)
 
         message = f'Start the reply to the user with this:\n\n'\
-                  f'**Rolled f{attacker_dice_roll}, f{stat} f{attacker_modifier_formatted}**\n\n'\
-                  f'**Target result: f{target_stat_modifier - target_dice_roll}**\n\n'\
+                  f'**You rolled {attacker_dice_roll}, {stat} {attacker_modifier_formatted}**\n\n'\
+                  f'**{target} rolled: {target_stat_modifier + target_dice_roll}**\n\n'\
                   f'Use this text to describe what happened:\n\n'\
-                  f'The attacker lost f{coins_lost} coins to f{target} and now has f{attacker_json_data["coins"]} coins'
+                  f'The player lost {coins_lost} coins to {target} and now has {attacker_json_data["coins"]} coins'
+
+    print(f'{attacker_json_data["username"]} attacked {target}', file=sys.stderr)
 
     return jsonify({'message': message})
 
