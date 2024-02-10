@@ -205,15 +205,28 @@ def chance():
     stat = data.get('stat').lower()
     difficulty = data.get('difficulty')
     coin_potential = data.get('coin_potential')
-    if coin_potential < 0:
-        coin_potential = 0
     print("Chance called", file=sys.stderr)
     print("stat: " + stat, file=sys.stderr)
     print("difficulty: " + str(difficulty), file=sys.stderr)
     print("coin_potential: " + str(coin_potential), file=sys.stderr)
 
-    if not email or not secret:
-        return jsonify({'error': 'Email and secret are required'}), 400
+    if not email:
+        return jsonify({'error': 'email is required'}), 400
+
+    if not secret:
+        return jsonify({'error': 'secret is required'}), 400
+
+    if not stat:
+        return jsonify({'error': 'stat is required'}), 400
+
+    if not difficulty:
+        return jsonify({'error': 'difficulty is required'}), 400
+
+    if not coin_potential:
+        return jsonify({'error': 'coin_potential is required'}), 400
+
+    if coin_potential < 0:
+        coin_potential = 0
 
     if stat not in ["vigor", "agility", "intelligence"]:
         return jsonify({'error': f'Stat must be either vigor, agility or intelligence'}), 400
@@ -264,7 +277,7 @@ def chance():
             coins_lost = json_data['coins']
         json_data['coins'] = json_data['coins'] - coins_lost
         extra_text = extra_text + f"Lost {coins_lost} coins"
-        if dice_roll <= 3:
+        if difficulty > 1:
             json_data[stat] = json_data[stat] - 1
             extra_text = extra_text + f", {stat} was reduced by 1"
 
@@ -294,21 +307,25 @@ def chance():
     elif result == 7:
         json_data['coins'] = json_data['coins'] + coin_potential + int(coin_potential * (dice_roll/3))
         extra_text = extra_text + f"Gained {coin_potential} coins"
-        if dice_roll >= 4:
+        if json_data[stat] >= 6:
+            extra_text = extra_text + f", {stat} would have increased, but it cannot increase further"
+        elif json_data[stat] - difficulty <= 1:
             json_data[stat] = json_data[stat] + 1
             extra_text = extra_text + f", {stat} increased by 1"
+        else:
+            extra_text = extra_text + f", {stat} would have increased, but the action was not difficult enough"
 
     elif result >= 8:
         json_data['coins'] = json_data['coins'] + coin_potential + int(coin_potential * dice_roll)
         extra_text = extra_text + f"Gained {coin_potential} coins"
-        if dice_roll >= 4:
-            json_data['vigor'] = json_data['vigor'] + 1
-            json_data['agility'] = json_data['agility'] + 1
-            json_data['intelligence'] = json_data['intelligence'] + 1
-            extra_text = extra_text + f", increased all stats by 1"
-        else:
-            json_data[stat] = json_data[stat] + 1
-            extra_text = extra_text + f", {stat} increased by 1"
+        for x in ['vigor', 'agility', 'intelligence']:
+            if json_data[x] >= 6:
+                extra_text = extra_text + f", {x} would have increased, but it cannot increase further"
+            elif json_data[x] - difficulty <= 1:
+                json_data[x] = json_data[x] + 1
+                extra_text = extra_text + f", {x} increased by 1"
+            else:
+                extra_text = extra_text + f", {x} would have increased, but the action was not difficult enough"
 
     if json_data['coins'] < 0:
         json_data['coins'] = 0
@@ -361,17 +378,25 @@ def purchase():
     json_data, events = read_savefile_and_pop_events(save_file)
     if json_data['coins'] > cost:
         json_data['coins'] = json_data['coins'] - cost
-        json_data[stat] = json_data[stat] + 1
+        if json_data[stat] >= 4:
+            return jsonify(
+                {
+                    'message': f'Paid {cost} coins but it had no effect on {stat} as it is too high to be increased by purchases, training or similar. It requires real life experience to increase further.',
+                    'events': events,
+                }
+            )
+        else:
+            json_data[stat] = json_data[stat] + 1
 
-        with open(save_file, 'w') as json_file:
-            json.dump(json_data, json_file)
+            with open(save_file, 'w') as json_file:
+                json.dump(json_data, json_file)
 
-        return jsonify(
-            {
-                'message': f'Paid {cost} coins to increase {stat} by 1, which is now {json_data[stat]}.',
-                'events': events,
-            }
-        )
+            return jsonify(
+                {
+                    'message': f'Paid {cost} coins to increase {stat} by 1, which is now {json_data[stat]}.',
+                    'events': events,
+                }
+            )
     else:
         return jsonify(
             {
