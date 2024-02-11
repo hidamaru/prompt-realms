@@ -10,8 +10,11 @@ def chance_action(json_data: dict, stat: str, difficulty: int, coin_potential: i
     dice_roll = random.randint(1, 6)
     result = dice_roll + stat_modifier - difficulty
 
+    print("*** CHANCE ****", file=sys.stderr)
+    print("stat: " + str(stat), file=sys.stderr)
+    print("difficulty: " + str(difficulty), file=sys.stderr)
+    print("coin_potential: " + str(coin_potential), file=sys.stderr)
     print("dice_roll: " + str(dice_roll), file=sys.stderr)
-    print("raw result: " + str(result), file=sys.stderr)
     print("result: " + str(result), file=sys.stderr)
 
     result_text_key = result
@@ -61,12 +64,12 @@ def chance_action(json_data: dict, stat: str, difficulty: int, coin_potential: i
         extra_text = extra_text + f"Gained {coin_potential} coins"
 
     elif result == 6:
-        coins_gained =  coin_potential + int(coin_potential * (dice_roll/6))
+        coins_gained = int(coin_potential + int(coin_potential * (dice_roll/6)))
         json_data['coins'] = json_data['coins'] + coins_gained
         extra_text = extra_text + f"Gained {coins_gained} coins"
 
     elif result == 7:
-        coins_gained = coin_potential + int(coin_potential * (dice_roll/3))
+        coins_gained = int(coin_potential + int(coin_potential * (dice_roll/3)))
         json_data['coins'] = json_data['coins'] + coins_gained
         extra_text = extra_text + f"Gained {coins_gained} coins"
         if json_data[stat] >= 6:
@@ -78,7 +81,7 @@ def chance_action(json_data: dict, stat: str, difficulty: int, coin_potential: i
             extra_text = extra_text + f", {stat} would have increased, but the action was not difficult enough"
 
     elif result >= 8:
-        coins_gained = coin_potential + int(coin_potential * dice_roll)
+        coins_gained = int(coin_potential + int(coin_potential * dice_roll))
         json_data['coins'] = json_data['coins'] + coins_gained
         extra_text = extra_text + f"Gained {coins_gained} coins"
         for x in ['vigor', 'agility', 'intelligence']:
@@ -95,17 +98,26 @@ def chance_action(json_data: dict, stat: str, difficulty: int, coin_potential: i
 
     message = message + extra_text
 
+    print("*** MESSAGE ***\n" + str(message) + "\n*************", file=sys.stderr)
+
     return json_data, message
 
 def attack_action(attacker_json_data: dict, target_json_data: dict, stat: str):
     target = target_json_data["username"]
-    print(f'{attacker_json_data["username"]} attacked {target}', file=sys.stderr)
 
     attacker_stat_modifier = attacker_json_data[stat]
     target_stat_modifier = target_json_data[stat]
     attacker_dice_roll = random.randint(1, 6)
     target_dice_roll = random.randint(1, 6)
     result = attacker_stat_modifier + attacker_dice_roll - target_stat_modifier - target_dice_roll
+
+    print("*** ATTACK ****", file=sys.stderr)
+    print(f'{attacker_json_data["username"]} attacked {target}', file=sys.stderr)
+    print("attacker_stat_modifier: " + str(attacker_stat_modifier), file=sys.stderr)
+    print("target_stat_modifier: " + str(target_stat_modifier), file=sys.stderr)
+    print("attacker_dice_roll: " + str(attacker_dice_roll), file=sys.stderr)
+    print("target_dice_roll: " + str(target_dice_roll), file=sys.stderr)
+    print("result: " + str(result), file=sys.stderr)
 
     if result > 0:
         target_coins = target_json_data["coins"]
@@ -121,7 +133,7 @@ def attack_action(attacker_json_data: dict, target_json_data: dict, stat: str):
             if target_json_data['vigor'] + 3 > attacker_json_data['vigor']:
                 stat_to_reduce = random.choice(['vigor', 'agility', 'intelligence'])
                 target_json_data[stat_to_reduce] = target_json_data[stat_to_reduce] - 1
-                attack_text =  f"\nUser {attacker_json_data['username']} wounded you in combat which reduced your {target_json_data} by 1, and took"
+                attack_text =  f"\nUser {attacker_json_data['username']} wounded you in combat which reduced your {stat_to_reduce} by 1, and took"
             else:
                 attack_text =  f"\nUser {attacker_json_data['username']} approached you, and out of fear you surrendered and gave them"
         elif stat == "agility":
@@ -173,5 +185,7 @@ def attack_action(attacker_json_data: dict, target_json_data: dict, stat: str):
                   f'**{target} rolled: {target_stat_modifier + target_dice_roll}**\n\n'\
                   f'Use this text to describe what happened:\n\n'\
                   f'The player lost {coins_lost} coins to {target} and now has {attacker_json_data["coins"]} coins'
+
+    print("*** MESSAGE ***\n" + str(message) + "\n*************", file=sys.stderr)
 
     return attacker_json_data, target_json_data, message

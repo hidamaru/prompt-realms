@@ -3,11 +3,10 @@ import os
 import random
 import secrets
 import string
+import sys
 import time
 
-bot_names = ["Sir Aradrian", "The Demon King", "An ambitious goblin", "The Red Dragon", "Alufgardh", "Andorai", "Olthragan", "Mothek"]
-
-secret = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(32))
+from actions import chance_action, attack_action
 
 bots = {
     "sir_aradrian": {
@@ -101,41 +100,91 @@ bots = {
 }
 
 for bot_name in bots.keys():
-    if not os.path.exists(f"{bot_name}.json"):
-        with open(f"{bot_name}.json", 'w') as f:
-            json.dump({
-                "coins": bots[bot_name]["coins"],
-                "vigor": bots[bot_name]["vigor"],
-                "agility": bots[bot_name]["agility"],
-                "intelligence": bots[bot_name]["intelligence"],
-                "items": bots[bot_name]["items"],
-                "username": bots[bot_name]["username"],
-                "token": bots[bot_name]["token"],
-                "secret": bots[bot_name]["secret"],
-                "events": bots[bot_name]["events"],
-            }, f)
-    print(bot_name)
+    print(f"Resetting {bot_name}")
+    with open(f"{bot_name}.json", 'w') as f:
+        json.dump({
+            "coins": bots[bot_name]["coins"],
+            "vigor": bots[bot_name]["vigor"],
+            "agility": bots[bot_name]["agility"],
+            "intelligence": bots[bot_name]["intelligence"],
+            "items": bots[bot_name]["items"],
+            "username": bots[bot_name]["username"],
+            "token": bots[bot_name]["token"],
+            "secret": bots[bot_name]["secret"],
+            "events": bots[bot_name]["events"],
+        }, f)
 
 
 while True:
+    # Clean up events
+    for bot in list(bots.keys()):
+        with open(f"{bot}.json", 'r') as json_file:
+            bot_json_data = json.load(json_file)
+
+        bot_json_data["events"] = ""
+
+        with open(f"{bot}.json", 'w') as json_file:
+            json.dump(bot_json_data, json_file)
+
+
     bot_to_act = random.choice(list(bots.keys()))
-    action = random.choice(["farm", "attack"])
-    bot_vigor = bots[bot_to_act]["vigor"]
-    bot_agility = bots[bot_to_act]["agility"]
-    bot_intelligence = bots[bot_to_act]["intelligence"]
+
+    with open(f"{bot_to_act}.json", 'r') as json_file:
+        bot_to_act_json = json.load(json_file)
+
+    action = random.choice(["chance", "attack"])
+    bot_vigor = bot_to_act_json["vigor"]
+    bot_agility = bot_to_act_json["agility"]
+    bot_intelligence = bot_to_act_json["intelligence"]
 
     stat_choice_list = ["vigor"] * bot_vigor + ["agility"] * bot_agility + ["intelligence"] * bot_intelligence
 
     stat = random.choice(stat_choice_list)
 
-    if action == "farm":
-        max_difficulty = bots[bot_to_act][stat]
+    if action == "chance":
+        max_difficulty = bot_to_act_json[stat]
         difficulty = random.randint(0, max_difficulty)
-        print(f"{bot_to_act} does a {difficulty} {stat} farm")
+        coin_potential = random.randint(1,9) * (10**(difficulty-1))
+
+        print(f"{bot_to_act} does a {difficulty} {stat} farm", file=sys.stderr)
+        bot_to_act_json, _ = chance_action(
+            json_data=bot_to_act_json,
+            stat=stat,
+            difficulty=difficulty,
+            coin_potential=coin_potential,
+        )
+
+        with open(f"{bot_to_act}.json", 'w') as json_file:
+            json.dump(bot_to_act_json, json_file)
+
     else:
-        all_targets = list(bots.keys())
-        all_targets.remove(bot_to_act)
-        target = random.choice(all_targets)
-        print(f"{bot_to_act} attacks {target} using {stat}")
+        all_targets = {}
+        for player_file in os.listdir():
+            if player_file.endswith('.json'):
+                with open(player_file, 'r') as json_file:
+                    target_json_data = json.load(json_file)
+
+                    if 'username' in target_json_data:
+                        if bot_to_act_json['username'] == target_json_data['username']:
+                            continue
+                        else:
+                            all_targets[target_json_data['username']] = player_file
+            target_json_data = None
+
+        target_username = random.choice(list(all_targets.keys()))
+
+        with open(f"{all_targets[target_username]}", 'r') as json_file:
+            target_json = json.load(json_file)
+
+        bot_to_act_json, target_json, _ = attack_action(
+            attacker_json_data=bot_to_act_json,
+            target_json_data=target_json,
+            stat=stat,
+        )
+
+        with open(f"{bot_to_act}.json", 'w') as json_file:
+            json.dump(bot_to_act_json, json_file)
+        with open(f"{all_targets[target_username]}", 'w') as json_file:
+            json.dump(target_json, json_file)
 
     time.sleep(60 * (10 + random.randint(0, 5)))
