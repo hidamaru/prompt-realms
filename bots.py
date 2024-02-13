@@ -144,7 +144,7 @@ while True:
     if action == "chance":
         max_difficulty = bot_to_act_json[stat]
         difficulty = random.randint(0, max_difficulty)
-        coin_potential = random.randint(1,9) * (10**(difficulty-1))
+        coin_potential = int(random.randint(1,9) * (10**(difficulty-1)))
 
         print(f"{bot_to_act} does a {difficulty} {stat} farm", file=sys.stderr)
         bot_to_act_json, _ = chance_action(
