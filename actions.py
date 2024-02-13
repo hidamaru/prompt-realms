@@ -37,8 +37,8 @@ def chance_action(json_data: dict, stat: str, difficulty: int, coin_potential: i
     if result <= 1:
         coins_lost = int(coin_potential*(dice_roll/2))
         if coins_lost > json_data['coins']:
-            coins_lost = json_data['coins']
-        json_data['coins'] = json_data['coins'] - coins_lost
+            coins_lost = int(json_data['coins'])
+        json_data['coins'] = int(json_data['coins'] - coins_lost)
         extra_text = extra_text + f"Lost {coins_lost} coins"
         if difficulty > 1:
             json_data[stat] = json_data[stat] - 1
@@ -47,8 +47,8 @@ def chance_action(json_data: dict, stat: str, difficulty: int, coin_potential: i
     elif result == 2:
         coins_lost = int(coin_potential*(dice_roll/3))
         if coins_lost > json_data['coins']:
-            coins_lost = json_data['coins']
-        json_data['coins'] = json_data['coins'] - coins_lost
+            coins_lost = int(json_data['coins'])
+        json_data['coins'] = int(json_data['coins'] - coins_lost)
         extra_text = extra_text + f"Lost {coins_lost} coins"
 
     elif result == 3:
@@ -56,21 +56,21 @@ def chance_action(json_data: dict, stat: str, difficulty: int, coin_potential: i
 
     elif result == 4:
         coins_gained = int(coin_potential * (dice_roll / 6))
-        json_data['coins'] = json_data['coins'] + coins_gained
+        json_data['coins'] = int(json_data['coins'] + coins_gained)
         extra_text = extra_text + f"Gained {coins_gained} coins"
 
     elif result == 5:
-        json_data['coins'] = json_data['coins'] + coin_potential
+        json_data['coins'] = int(json_data['coins'] + coin_potential)
         extra_text = extra_text + f"Gained {coin_potential} coins"
 
     elif result == 6:
         coins_gained = int(coin_potential + int(coin_potential * (dice_roll/6)))
-        json_data['coins'] = json_data['coins'] + coins_gained
+        json_data['coins'] = int(json_data['coins'] + coins_gained)
         extra_text = extra_text + f"Gained {coins_gained} coins"
 
     elif result == 7:
         coins_gained = int(coin_potential + int(coin_potential * (dice_roll/3)))
-        json_data['coins'] = json_data['coins'] + coins_gained
+        json_data['coins'] = int(json_data['coins'] + coins_gained)
         extra_text = extra_text + f"Gained {coins_gained} coins"
         if json_data[stat] >= 6:
             extra_text = extra_text + f", {stat} would have increased, but it cannot increase further"
@@ -82,7 +82,7 @@ def chance_action(json_data: dict, stat: str, difficulty: int, coin_potential: i
 
     elif result >= 8:
         coins_gained = int(coin_potential + int(coin_potential * dice_roll))
-        json_data['coins'] = json_data['coins'] + coins_gained
+        json_data['coins'] = int(json_data['coins'] + coins_gained)
         extra_text = extra_text + f"Gained {coins_gained} coins"
         for x in ['vigor', 'agility', 'intelligence']:
             if json_data[x] >= 6:
@@ -120,12 +120,12 @@ def attack_action(attacker_json_data: dict, target_json_data: dict, stat: str):
     print("result: " + str(result), file=sys.stderr)
 
     if result > 0:
-        target_coins = target_json_data["coins"]
-        own_coins = attacker_json_data["coins"]
+        target_coins = int(target_json_data["coins"])
+        own_coins = int(attacker_json_data["coins"])
         coins_taken = int(result + (target_coins * ( result / 5 )))
         if coins_taken > target_coins:
-            coins_taken = target_coins
-        target_json_data['coins'] = target_coins - coins_taken
+            coins_taken = int(target_coins)
+        target_json_data['coins'] = int(target_coins - coins_taken)
 
         attack_text = ""
         stat_to_reduce = None
@@ -145,7 +145,7 @@ def attack_action(attacker_json_data: dict, target_json_data: dict, stat: str):
             target_json_data['events'] = target_json_data['events'] + f"{attack_text} {coins_taken} coins."
         else:
             target_json_data['events'] = f"User {attacker_json_data['username']} attacked you and stole {coins_taken} coins."
-        attacker_json_data['coins'] = own_coins + coins_taken
+        attacker_json_data['coins'] = int(own_coins + coins_taken)
 
         attacker_modifier_formatted = string_format_modifier(attacker_stat_modifier)
 
@@ -166,17 +166,17 @@ def attack_action(attacker_json_data: dict, target_json_data: dict, stat: str):
             message = message + f'The player outwitted {target}, or used spells in order to take {coins_taken} coins from them. The player now has {attacker_json_data["coins"]} coins.' \
                                 f'\n\nDoing this, the player also learned that {target} has {target_json_data[stat_to_learn]} {stat_to_learn}.'
     else:
-        target_coins = target_json_data["coins"]
-        own_coins = attacker_json_data["coins"]
+        target_coins = int(target_json_data["coins"])
+        own_coins = int(attacker_json_data["coins"])
         coins_lost = int(abs(result) + (own_coins * ( abs(result-1) / 5 )))
         if coins_lost > own_coins:
-            coins_lost = own_coins
-        target_json_data['coins'] = target_coins + coins_lost
+            coins_lost = int(own_coins)
+        target_json_data['coins'] = int(target_coins + coins_lost)
         if "events" in target_json_data.keys():
             target_json_data['events'] = target_json_data['events'] + f"\nUser {attacker_json_data['username']} tried to take coins from you but failed, you gained {coins_lost} coins."
         else:
             target_json_data['events'] = f"\nUser {attacker_json_data['username']} tried to take coins from you but failed, you gained {coins_lost} coins."
-        attacker_json_data['coins'] = own_coins - coins_lost
+        attacker_json_data['coins'] = int(own_coins - coins_lost)
 
         attacker_modifier_formatted = string_format_modifier(target_stat_modifier)
 
