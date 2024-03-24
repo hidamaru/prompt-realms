@@ -213,19 +213,19 @@ def chance():
     print("difficulty: " + str(difficulty), file=sys.stderr)
     print("coin_potential: " + str(coin_potential), file=sys.stderr)
 
-    if not email:
+    if email is None:
         return jsonify({'error': 'email is required'}), 400
 
-    if not secret:
+    if secret is None:
         return jsonify({'error': 'secret is required'}), 400
 
-    if not stat:
+    if stat is None:
         return jsonify({'error': 'stat is required'}), 400
 
-    if not difficulty:
+    if difficulty is None:
         return jsonify({'error': 'difficulty is required'}), 400
 
-    if not coin_potential:
+    if coin_potential is None:
         return jsonify({'error': 'coin_potential is required'}), 400
 
     if coin_potential < 0:
@@ -302,7 +302,7 @@ def purchase():
         cost = int(data.get('cost').replace("+", "").replace("-", "").strip())
 
     json_data, events = read_savefile_and_pop_events(save_file)
-    if json_data['coins'] > cost:
+    if json_data['coins'] >= cost:
         json_data['coins'] = json_data['coins'] - cost
         if json_data[stat] >= 4:
             return jsonify(
