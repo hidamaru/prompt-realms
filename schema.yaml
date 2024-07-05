@@ -1,4 +1,4 @@
-openapi: 3.0.0
+openapi: 3.1.0
 info:
   title: Flask App API
   description: API for managing user authentication and coin updates
@@ -179,7 +179,7 @@ paths:
                     type: string
   /update-username:
     post:
-      summary: Update's the users username, which is shown on the high score list. Requires a secret to use
+      summary: Update the user's username, which is shown on the high score list. Requires a secret to use
       operationId: updateUsername
       security:
         - APIKeyAuth: []
@@ -237,7 +237,7 @@ paths:
                     type: string
   /chance:
     post:
-      summary: Randomize a result of an action with specific stat, difficulty and coin_potential. stat must be vigor, agility or intelligence. difficult must be 0 to 5, where 0 is mundane and 5 is almost impossible. coin_potential is the positive number of coins expected to be gained from the activity.
+      summary: Randomize a result of an action with specific stat, difficulty and coin_potential. stat must be vigor, agility or intelligence. difficulty must be 0 to 5, where 0 is mundane and 5 is almost impossible. coin_potential is the positive number of coins expected to be gained from the activity.
       operationId: chance
       security:
         - APIKeyAuth: []
@@ -255,9 +255,9 @@ paths:
                 stat:
                   type: string
                 difficulty:
-                  type: int
+                  type: integer
                 coin_potential:
-                  type: int
+                  type: integer
       responses:
         '200':
           description: Result randomized successfully
@@ -321,7 +321,8 @@ paths:
                 stat:
                   type: string
                 cost:
-                  type: int
+                  type: integer
+      responses:
         '200':
           description: Transaction completed
           content:
@@ -394,9 +395,9 @@ paths:
                 type: object
                 properties:
                   attacker_dice_roll:
-                    type: int
+                    type: integer
                   target_dice_roll:
-                    type: int
+                    type: integer
                   message:
                     type: string
         '400':
@@ -427,8 +428,9 @@ paths:
                   error:
                     type: string
 components:
-  schemas:
-    apiKeyAuth:
+  securitySchemes:
+    APIKeyAuth:
       type: apiKey
       in: header
       name: Authorization
+  schemas: {}
